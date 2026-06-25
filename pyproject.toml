@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nol-ticket-bot"
+version = "0.2.0"
+description = "NOL World ticket monitor and guarded purchase helper"
+requires-python = ">=3.10"
+dependencies = [
+    "DrissionPage>=4.1.0",
+    "click>=8.1",
+    "python-dotenv>=1.0",
+    "requests>=2.31.0",
+]
+
+[project.scripts]
+nol-bot = "nol_ticket_bot.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "build>=1.2",
+    "mypy>=1.10",
+    "pyright>=1.1",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "responses>=0.25",
+    "ruff>=0.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nol_ticket_bot"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=nol_ticket_bot --cov-report=term-missing --cov-fail-under=80"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP", "W"]
+
+[tool.mypy]
+python_version = "3.10"
+mypy_path = "src"
+warn_unused_configs = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["DrissionPage", "DrissionPage.*"]
+ignore_missing_imports = true
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.10"
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
