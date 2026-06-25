@@ -21,8 +21,26 @@ log = logging.getLogger(__name__)
 INTERPARK_HOSTS = {"tickets.interpark.com", "ticket.globalinterpark.com"}
 INTERPARK_WAITING_HOSTS = {"ent-waiting-api.interpark.com"}
 TOKEN_GATE_PATH = "/gates/partner"
-SUCCESS_PATH_SEGMENTS = {"seat", "booking", "order", "reservation", "select", "schedule", "payment", "purchase"}
-QUEUE_PATH_SEGMENTS = {"seat", "booking", "order", "reservation", "select", "schedule", "payment", "purchase"}
+SUCCESS_PATH_SEGMENTS = {
+    "seat",
+    "booking",
+    "order",
+    "reservation",
+    "select",
+    "schedule",
+    "payment",
+    "purchase",
+}
+QUEUE_PATH_SEGMENTS = {
+    "seat",
+    "booking",
+    "order",
+    "reservation",
+    "select",
+    "schedule",
+    "payment",
+    "purchase",
+}
 DENY_PATH_SEGMENTS = {"error", "denied", "forbidden", "blocked", "invalid"}
 DENY_TEXT_MARKERS = (
     "abnormal",
@@ -125,7 +143,7 @@ class PurchaseResult:
     selected_count: int = 0
 
     @classmethod
-    def from_step(cls, step: PurchaseStep, result: StepResult) -> "PurchaseResult":
+    def from_step(cls, step: PurchaseStep, result: StepResult) -> PurchaseResult:
         return cls(
             ok=result.ok,
             status=result.status,
@@ -218,7 +236,10 @@ def login(page: Any, settings: Settings | None = None) -> StepResult:
 
     if active.nol_email and active.nol_password:
         try:
-            wait_for_element(page, "input[type='email']", timeout=10).input(active.nol_email, clear=True)
+            wait_for_element(page, "input[type='email']", timeout=10).input(
+                active.nol_email,
+                clear=True,
+            )
             wait_for_element(page, "input[type='password']", timeout=5).input(
                 active.nol_password,
                 clear=True,
@@ -367,7 +388,12 @@ def inspect_queue(page: Any) -> StepResult | None:
     if failure:
         return failure
     if _has_deny_text(page):
-        return StepResult(False, PurchaseStatus.QUEUE_TIMEOUT, "queue deny marker found", redact_url(url))
+        return StepResult(
+            False,
+            PurchaseStatus.QUEUE_TIMEOUT,
+            "queue deny marker found",
+            redact_url(url),
+        )
     if _has_dom_marker(page, QUEUE_SUCCESS_SELECTORS):
         return StepResult(True, PurchaseStatus.SUCCESS, url=redact_url(url))
     if host in INTERPARK_HOSTS and _has_any_segment(url, QUEUE_PATH_SEGMENTS):
@@ -399,7 +425,12 @@ def wait_for_queue(
         if result:
             return result
         sleep_fn(active.queue_poll)
-    return StepResult(False, PurchaseStatus.QUEUE_TIMEOUT, "queue timed out", safe_current_url(page))
+    return StepResult(
+        False,
+        PurchaseStatus.QUEUE_TIMEOUT,
+        "queue timed out",
+        safe_current_url(page),
+    )
 
 
 def select_seat(page: Any, settings: Settings | None = None) -> StepResult:
@@ -487,14 +518,20 @@ def _seat_click_js(selector_json: str) -> str:
   }}
   function selectedCount() {{
     const seen = new Set();
-    for (const item of selectedSelectors.flatMap((itemSelector) => [...document.querySelectorAll(itemSelector)])) {{
+    const selectedItems = selectedSelectors.flatMap(
+      (itemSelector) => [...document.querySelectorAll(itemSelector)]
+    );
+    for (const item of selectedItems) {{
       seen.add(item);
     }}
     return seen.size;
   }}
   const elements = [...document.querySelectorAll(selector)];
   const element = elements.find((item) => !isSelected(item));
-  if (!element) return {{ clicked: false, selected: false, before: selectedCount(), after: selectedCount() }};
+  if (!element) {{
+    const count = selectedCount();
+    return {{ clicked: false, selected: false, before: count, after: count }};
+  }}
   const before = selectedCount();
   element.click();
   await new Promise((resolve) => setTimeout(resolve, 100));

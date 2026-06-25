@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import unquote
 
 from nol_ticket_bot.redaction import REDACTED, RedactingFilter, redact_text, redact_url
 
@@ -18,7 +19,7 @@ def test_redact_url_removes_sensitive_query_names_and_values() -> None:
     assert "user_id" not in redacted
     assert "secret" not in redacted
     assert "gc=26005973" in redacted
-    assert REDACTED in redacted
+    assert REDACTED in unquote(redacted)
 
 
 def test_redact_text_redacts_order_session_and_jwt() -> None:

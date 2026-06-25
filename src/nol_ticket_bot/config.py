@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -95,7 +95,12 @@ def _validate_code(name: str, value: str) -> str:
     return cleaned
 
 
-def _validate_range(name: str, value: int | float, minimum: int | float, maximum: int | float) -> None:
+def _validate_range(
+    name: str,
+    value: int | float,
+    minimum: int | float,
+    maximum: int | float,
+) -> None:
     if value < minimum or value > maximum:
         raise SettingsError(f"{name} must be between {minimum} and {maximum}")
 
@@ -128,7 +133,7 @@ class Settings:
     salesinfo_rate_limit: float = 0.25
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str] | None = None) -> "Settings":
+    def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
         source = os.environ if env is None else env
         grades = tuple(
             grade.strip().upper()

@@ -50,7 +50,10 @@ def test_settings_rejects_invalid_values(key: str, value: str) -> None:
         Settings.from_env(env)
 
 
-def test_resolve_env_path_prefers_cwd_dotenv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_resolve_env_path_prefers_cwd_dotenv(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     dotenv = tmp_path / ".env"
     dotenv.write_text("GOODS_CODE=abc\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)

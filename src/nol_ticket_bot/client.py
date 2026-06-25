@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 import random
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 import requests
 
@@ -17,10 +17,33 @@ from .redaction import redact_url
 log = logging.getLogger(__name__)
 
 
+class ResponseLike(Protocol):
+    status_code: int
+    url: str
+
+    def json(self) -> Any: ...
+
+    def raise_for_status(self) -> None: ...
+
+
+class SessionLike(Protocol):
+    def get(
+        self,
+        url: str,
+        *,
+        params: Mapping[str, str],
+        timeout: float,
+    ) -> ResponseLike: ...
+
+
+def _default_session() -> SessionLike:
+    return requests.Session()
+
+
 @dataclass
 class NolClient:
     settings: Settings
-    session: requests.Session = field(default_factory=requests.Session)
+    session: SessionLike = field(default_factory=_default_session)
     sleeper: Callable[[float], None] = time.sleep
     clock: Callable[[], float] = time.monotonic
     random_source: random.Random = field(default_factory=random.Random)
@@ -47,12 +70,11 @@ class NolClient:
                     timeout=self.settings.salesinfo_timeout,
                 )
                 if response.status_code in {429, 500, 502, 503, 504}:
-                    raise requests.HTTPError(
-                        f"retryable status {response.status_code}",
-                        response=response,
-                    )
+                    raise requests.HTTPError(f"retryable status {response.status_code}")
                 response.raise_for_status()
                 payload = response.json()
+                if not isinstance(payload, dict):
+                    return {}
                 data = payload.get("data", {})
                 return data if isinstance(data, dict) else {}
             except (requests.RequestException, ValueError, OSError) as exc:

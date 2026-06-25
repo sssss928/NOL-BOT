@@ -4,25 +4,25 @@ from __future__ import annotations
 
 import logging
 import time
+from importlib import import_module
 from typing import Any
 
 from . import config
-
-try:  # Import lazily enough that tests can run without a real browser.
-    from DrissionPage import ChromiumOptions, ChromiumPage
-except ModuleNotFoundError:  # pragma: no cover - exercised only without optional runtime dep
-    ChromiumOptions = None  # type: ignore[assignment]
-    ChromiumPage = Any  # type: ignore[misc,assignment]
 
 log = logging.getLogger(__name__)
 
 
 def create_browser() -> Any:
-    if ChromiumOptions is None:
-        raise RuntimeError("DrissionPage is required to launch a browser")
+    try:
+        drission_page: Any = import_module("DrissionPage")
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("DrissionPage is required to launch a browser") from exc
 
     settings = config.SETTINGS
-    options = ChromiumOptions()
+    options_cls = drission_page.ChromiumOptions
+    page_cls = drission_page.ChromiumPage
+
+    options = options_cls()
     options.set_argument("--disable-blink-features=AutomationControlled")
     options.set_pref("credentials_enable_service", False)
     options.set_pref("profile.password_manager_enabled", False)
@@ -35,7 +35,7 @@ def create_browser() -> Any:
     if settings.headless:
         options.headless(True)
 
-    page = ChromiumPage(options)
+    page = page_cls(options)
     page.run_cdp(
         "Page.addScriptToEvaluateOnNewDocument",
         source="""

@@ -13,7 +13,8 @@ import click
 
 from . import config
 from .monitor import fetch_sales_info, poll_until_open
-from .purchase import PurchaseResult, PurchaseStatus, run as purchase_run
+from .purchase import PurchaseResult, PurchaseStatus
+from .purchase import run as purchase_run
 from .redaction import install_redacting_filter
 
 log = logging.getLogger(__name__)
@@ -116,7 +117,7 @@ def _run_purchase() -> None:
 def _confirm_payment(url: str) -> bool:
     click.secho("Payment confirmation required.", fg="yellow", bold=True)
     click.echo(f"Current page: {url}")
-    value = click.prompt("Type PAY to continue to payment", default="", show_default=False)
+    value = str(click.prompt("Type PAY to continue to payment", default="", show_default=False))
     return value.strip().upper() == "PAY"
 
 
@@ -130,7 +131,11 @@ def _do_purchase(page: Any) -> None:
 def _print_purchase_result(result: PurchaseResult) -> None:
     if result.ok:
         if result.status == PurchaseStatus.STOPPED_BEFORE_PAYMENT:
-            click.secho("\npurchase flow stopped before payment for manual completion", fg="green", bold=True)
+            click.secho(
+                "\npurchase flow stopped before payment for manual completion",
+                fg="green",
+                bold=True,
+            )
         else:
             click.secho("\npurchase flow completed", fg="green", bold=True)
         if result.selected_count:
